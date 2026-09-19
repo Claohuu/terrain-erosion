@@ -34,8 +34,13 @@ same seed produces the same result every run, so every bug reproduces.
 
 ## Author background — read this carefully
 
-- Strong Java / OOP background. Fluent in graphics concepts: has written ray
-  tracers, shaders (HLSL, ShaderGraph), and mesh generation tooling.
+- Strong Java / OOP background.
+- **Graphics exposure is narrower than the resume suggests at a glance.** Has
+  written a ray tracer in C# (mirror reflections, perspective correction) --
+  that part is real. Has NOT done procedural mesh generation, and shader work
+  (ShaderGraph, HLSL) is largely forgotten. Do not assume familiarity with
+  noise functions, procedural generation, or graphics math. Ask before
+  skipping an explanation.
 - **Beginner at C++.** Assume no prior knowledge of pointers, raw buffers,
   headers vs source files, manual memory, or C-style error handling. Explain
   language mechanics alongside the algorithm, not just the algorithm.
