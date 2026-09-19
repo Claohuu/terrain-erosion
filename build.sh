@@ -16,7 +16,7 @@ emcc cpp/terrain.cpp \
   -sENVIRONMENT=web \
   -sSINGLE_FILE=1 \
   -sALLOW_MEMORY_GROWTH=1 \
-  -sEXPORTED_FUNCTIONS=_add,_malloc,_free \
+  -sEXPORTED_FUNCTIONS=_generate,_malloc,_free \
   -sEXPORTED_RUNTIME_METHODS=ccall,cwrap,HEAPF32,HEAPU8
 
 echo "built web/src/wasm/terrain.js"
