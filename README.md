@@ -9,6 +9,8 @@ Nothing about the rivers is authored. Droplets pick up sediment on steep
 ground, carry it downhill, and drop it where the flow slows. Later droplets
 fall into the channels earlier ones cut, and valleys emerge from that feedback.
 
+**[Live demo](https://claohuu.github.io/terrain-erosion/)**
+
 ```
 sliders  →  generate()  →  erode()  →  hillshade  →  canvas
               C++/WASM     C++/WASM      JS
@@ -26,7 +28,8 @@ npm install
 npm run dev
 ```
 
-Then open http://localhost:5173.
+Then open http://localhost:5173/terrain-erosion/ (the path prefix matches how
+GitHub Pages serves it).
 
 `build.sh` must be re-run after any C++ change — the JavaScript hot-reloads,
 the WebAssembly does not.
@@ -125,13 +128,25 @@ nothing but still reports a median rather than a first sample.
 - **GPU.** A compute shader would beat this comfortably. The point here was
   CPU-side simulation performance.
 
+## Deployment
+
+Pushing to `main` triggers `.github/workflows/deploy.yml`, which installs
+Emscripten, compiles the C++, builds the frontend, and publishes to GitHub
+Pages. The WebAssembly is compiled in CI rather than committed, so the
+repository holds no build artifacts.
+
+Because Pages serves a project repo from `/<repo-name>/`, Vite's `base` is set
+to `/terrain-erosion/` unconditionally — including in dev and preview, so all
+three environments resolve assets identically.
+
 ## Layout
 
 ```
-cpp/terrain.cpp        noise, erosion, and the exported entry points
-build.sh               emcc invocation
-web/src/App.jsx        React UI, hillshading, benchmark harness
-web/src/index.css      styles
+cpp/terrain.cpp                 noise, erosion, and the exported entry points
+build.sh                        emcc invocation
+web/src/App.jsx                 React UI, hillshading, benchmark harness
+web/src/index.css               styles
+.github/workflows/deploy.yml    build and publish to Pages
 ```
 
 The C++ exposes two functions. `generate` allocates a heightmap and returns a
