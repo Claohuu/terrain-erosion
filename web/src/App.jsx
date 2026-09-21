@@ -9,13 +9,8 @@ function normalize(x, y, z) {
   return { x: x / length, y: y / length, z: z / length };
 }
 
-// Light direction for hillshading, pointing down from the upper left. That is
-// the cartographic convention -- lit from any other angle, most people read
-// valleys as ridges and ridges as valleys.
 const LIGHT = normalize(-0.6, -0.6, 0.55);
 
-// Elevation ramp, low to high. Deliberately muted so the shading carries the
-// form rather than the colour.
 const STOPS = [
   [0.0, [42, 58, 74]],
   [0.3, [68, 92, 78]],
@@ -43,12 +38,6 @@ function elevationColor(t) {
   return STOPS[STOPS.length - 1][1];
 }
 
-/**
- * Turns a heightmap into pixels.
- *
- * 'height' is raw greyscale, useful for debugging.
- * 'shaded' computes a surface normal per pixel and lights it.
- */
 function renderHeights(heights, imageData, mode, relief) {
   let min = Infinity;
   let max = -Infinity;
@@ -62,8 +51,6 @@ function renderHeights(heights, imageData, mode, relief) {
     }
   }
 
-  // Stretch to the full range. Averaging octaves pulls values toward the
-  // middle, so without this everything sits in a narrow grey band.
   const span = Math.max(1e-6, max - min);
   const data = imageData.data;
 
@@ -82,8 +69,6 @@ function renderHeights(heights, imageData, mode, relief) {
         continue;
       }
 
-      // Central differences give the slope along each axis. Clamped at the
-      // edges so we never sample outside the array.
       let xm = i - 1;
       let xp = i + 1;
       let ym = i - WIDTH;
@@ -105,8 +90,6 @@ function renderHeights(heights, imageData, mode, relief) {
       const dzdx = ((heights[xp] - heights[xm]) / span) * relief;
       const dzdy = ((heights[yp] - heights[ym]) / span) * relief;
 
-      // The surface normal is perpendicular to the slope. A steeper slope
-      // tilts the normal further from vertical, so it catches less light.
       const n = normalize(-dzdx, -dzdy, 1.0);
       let shade = n.x * LIGHT.x + n.y * LIGHT.y + n.z * LIGHT.z;
 
@@ -114,7 +97,6 @@ function renderHeights(heights, imageData, mode, relief) {
         shade = 0;
       }
 
-      // Ambient term, so faces turned away are dark rather than black.
       shade = 0.25 + 0.75 * shade;
 
       const rgb = elevationColor(t);
@@ -155,8 +137,6 @@ export default function App() {
   const [ready, setReady] = useState(false);
   const [bench, setBench] = useState(null);
 
-  // Redraw whichever map is selected. Costs nothing on the C++ side -- both
-  // heightmaps already live in JS memory.
   const draw = useCallback(() => {
     const maps = mapsRef.current;
     let heights = maps.eroded;
@@ -184,9 +164,6 @@ export default function App() {
 
     setBusy(true);
 
-    // Yield a frame so the "simulating" state paints before we block. WASM
-    // runs synchronously on the main thread, so a long erosion freezes the UI
-    // until it returns.
     setTimeout(() => {
       const genStart = performance.now();
       const ptr = mod._generate(WIDTH, HEIGHT, p.seed, p.gridSize,
@@ -196,7 +173,6 @@ export default function App() {
       const floatIndex = ptr / 4;
       const shared = mod.HEAPF32.subarray(floatIndex, floatIndex + WIDTH * HEIGHT);
 
-      // Copy the pre-erosion state out so before/after toggling is instant.
       const raw = new Float32Array(shared);
 
       const erodeStart = performance.now();
@@ -206,7 +182,6 @@ export default function App() {
 
       const eroded = new Float32Array(shared);
 
-      // C++ malloc'd this; nothing frees it automatically.
       mod._free(ptr);
 
       mapsRef.current = { raw, eroded };
@@ -222,9 +197,6 @@ export default function App() {
     }, 16);
   }, []);
 
-  // Runs the erosion several times and reports the median. A single timing is
-  // noise -- background tabs, GC, and CPU frequency scaling all move it around
-  // by tens of percent. Median of N with the spread shown is honest.
   const runBenchmark = useCallback((p, runs) => {
     const mod = moduleRef.current;
 

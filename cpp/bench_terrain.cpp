@@ -1,11 +1,3 @@
-// Native scaling benchmark.
-//
-// The in-browser benchmark answers "how fast is it right now". This answers
-// the more useful question: how does throughput behave as the work grows, and
-// where does it stop being linear.
-//
-// Build and run with ./run_bench.sh
-
 #include "terrain.cpp"
 
 #include <algorithm>
@@ -16,8 +8,6 @@
 
 typedef std::chrono::steady_clock Clock;
 
-// Median of several runs. A single timing moves by tens of percent with CPU
-// frequency scaling, so it is not a measurement.
 static double medianErodeMs(int width, int height, int droplets, int radius, int runs)
 {
     std::vector<double> samples;
@@ -28,8 +18,7 @@ static double medianErodeMs(int width, int height, int droplets, int radius, int
 
     for (int i = 0; i < runs; i += 1)
     {
-        // Erode a fresh copy every time -- eroding already-eroded terrain is a
-        // different workload, because flatter ground means fewer brush writes.
+
         memcpy(scratch, base, bytes);
 
         Clock::time_point start = Clock::now();
@@ -48,13 +37,6 @@ static double medianErodeMs(int width, int height, int droplets, int radius, int
     return samples[samples.size() / 2];
 }
 
-// Runs the simulation continuously before any measurement is taken.
-//
-// Without this, early numbers are recorded while the CPU is still on its boost
-// clock and later ones after it has settled to its sustained frequency. That
-// produced a 2x spread on identical work purely from measurement order.
-// Median-of-N does not help, because every sample within a group sits at the
-// same point on the thermal curve.
 static void warmUp(double seconds)
 {
     float* base = generate(512, 512, 1, 140.0f, 6, 0.5f, 2.0f);
@@ -73,8 +55,6 @@ static void warmUp(double seconds)
     free(base);
 }
 
-// One fixed configuration, measured at the start and again at the end. If the
-// two disagree, the machine drifted and every number between them is suspect.
 static double control(int runs)
 {
     return medianErodeMs(512, 512, 100000, 3, runs);
@@ -143,7 +123,7 @@ int main()
 
     for (int radius = 1; radius <= 6; radius += 1)
     {
-        // Cells inside the circular brush, which is what the inner loop costs.
+
         int cells = 0;
 
         for (int dy = -radius; dy <= radius; dy += 1)

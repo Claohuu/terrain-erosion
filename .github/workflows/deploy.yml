@@ -5,28 +5,23 @@ on:
     branches: [main]
   workflow_dispatch:
 
-# Required by actions/deploy-pages. contents:read to check out, pages:write to
-# publish, id-token:write so the deploy step can prove it came from this run.
 permissions:
   contents: read
   pages: write
   id-token: write
 
-# Let a running deploy finish rather than cancelling it midway.
 concurrency:
   group: pages
   cancel-in-progress: false
 
 jobs:
-  # Tests run natively with g++ -- no Emscripten, no browser. A failure here
-  # stops the deploy, so main never publishes a broken simulation.
   test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
       - name: Run test suite
-        run: ./run_tests.sh
+        run: bash run_tests.sh
 
   build:
     needs: test
@@ -34,8 +29,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Installs Emscripten and puts emcc on PATH, so build.sh skips its
-      # emsdk_env.sh lookup entirely.
       - name: Set up Emscripten
         uses: mymindstorm/setup-emsdk@v14
         with:
@@ -43,7 +36,7 @@ jobs:
           actions-cache-folder: emsdk-cache
 
       - name: Compile C++ to WebAssembly
-        run: ./build.sh
+        run: bash build.sh
 
       - uses: actions/setup-node@v4
         with:

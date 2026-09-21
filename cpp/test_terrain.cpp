@@ -1,10 +1,3 @@
-// Native test harness for the terrain code.
-//
-// Builds without Emscripten (see run_tests.sh) so the simulation can be tested
-// with a plain compiler and no browser. terrain.cpp is included directly as a
-// unity build -- the project is a single translation unit, so a separate
-// header would only duplicate declarations.
-
 #include "terrain.cpp"
 
 #include <cmath>
@@ -28,8 +21,6 @@ static void check(bool condition, const char* name)
         checksFailed += 1;
     }
 }
-
-// ---------------------------------------------------------------------------
 
 static void testNoise()
 {
@@ -60,21 +51,16 @@ static void testNoise()
     check(inRange, "value noise stays within [0, 1]");
     check(varies, "value noise actually varies");
 
-    // Same inputs must give the same answer, or interpolation between cells
-    // would be inconsistent and the terrain would tear at cell boundaries.
     check(valueNoise(12.3f, 45.6f, 32.0f, 7) == valueNoise(12.3f, 45.6f, 32.0f, 7),
           "value noise is deterministic");
 
     check(valueNoise(12.3f, 45.6f, 32.0f, 7) != valueNoise(12.3f, 45.6f, 32.0f, 8),
           "value noise differs by seed");
 
-    // Adjacent samples should be close together. This is the property that
-    // separates noise from static, and it is what a broken hash would break.
     float a = valueNoise(100.0f, 100.0f, 64.0f, 3);
     float b = valueNoise(100.5f, 100.0f, 64.0f, 3);
     check(fabsf(a - b) < 0.1f, "neighbouring samples are correlated");
 
-    // fbm normalises by the summed amplitudes, so it must stay in range too.
     bool fbmInRange = true;
 
     for (int i = 0; i < 5000; i += 1)
@@ -124,10 +110,6 @@ static void testGenerate()
     free(c);
 }
 
-// Allocates a heightmap with sentinel values on either side, so any write past
-// the logical bounds is detectable. The erosion brush indexes by flat offset
-// and relies on a spawn margin to stay inside -- this is the test that the
-// margin is actually wide enough.
 static const int GUARD = 64;
 static const float SENTINEL = -123456.0f;
 
@@ -167,7 +149,6 @@ static void testErosion()
 
     float* base = generate(w, h, 42, 48.0f, 5, 0.5f, 2.0f);
 
-    // --- determinism -----------------------------------------------------
     float* runA = (float*)malloc((size_t)w * h * sizeof(float));
     float* runB = (float*)malloc((size_t)w * h * sizeof(float));
     memcpy(runA, base, (size_t)w * h * sizeof(float));
@@ -182,7 +163,6 @@ static void testErosion()
     check(memcmp(runA, base, (size_t)w * h * sizeof(float)) != 0,
           "erosion actually modifies the terrain");
 
-    // --- numerical sanity -------------------------------------------------
     bool finite = true;
     bool nonNegative = true;
 
@@ -202,10 +182,6 @@ static void testErosion()
     check(finite, "eroded terrain contains no NaN or infinity");
     check(nonNegative, "erosion never digs below zero");
 
-    // --- mass accounting --------------------------------------------------
-    //
-    // Total height should only ever fall, and only by what droplets carry off
-    // the edge of the map. A rise would mean sediment is being created.
     double before = 0.0;
     double after = 0.0;
 
@@ -227,7 +203,6 @@ static void testErosion()
     free(runA);
     free(runB);
 
-    // --- bounds safety ----------------------------------------------------
     for (int radius = 1; radius <= 8; radius += 1)
     {
         float* guarded = allocateGuarded(w, h);
@@ -243,7 +218,6 @@ static void testErosion()
         free(guarded);
     }
 
-    // --- degenerate inputs -------------------------------------------------
     float* tiny = generate(8, 8, 1, 4.0f, 2, 0.5f, 2.0f);
     erode(tiny, 8, 8, 100, 1, 0.05f, 0.3f, 0.3f, 8);
     check(true, "erosion survives a map smaller than the brush");
