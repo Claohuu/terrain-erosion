@@ -151,6 +151,87 @@ it pays module compilation. This is visible as the gap between the single-run
 readout and the benchmark median, and is the reason the benchmark discards
 nothing but still reports a median rather than a first sample.
 
+## Scaling
+
+```bash
+./run_bench.sh
+```
+
+Native benchmark (`-O3`, same flags as the WebAssembly build) sweeping
+resolution, droplet count, and brush radius.
+
+**Resolution** — 100,000 droplets, radius 3:
+
+| Size | Heightmap | Median | Droplets/sec | vs 256 |
+|---|---|---|---|---|
+| 256x256 | 0.2 MB | 229ms | 435,739 | 100% |
+| 512x512 | 1.0 MB | 231ms | 432,963 | 99% |
+| 1024x1024 | 4.0 MB | 241ms | 415,696 | 95% |
+| 2048x2048 | 16.0 MB | 255ms | 392,973 | 90% |
+
+Throughput is nearly flat. Droplets wander, so access is spatially scattered
+and a 16 MB heightmap cannot stay resident in cache — but each droplet does
+enough arithmetic per step that the misses are largely hidden. A 10% cost for
+64x the map is cheaper than expected.
+
+**Droplet count** — 512x512, radius 3:
+
+| Droplets | Median | Droplets/sec | ms per 10k |
+|---|---|---|---|
+| 25,000 | 50ms | 500,507 | 19.98 |
+| 50,000 | 106ms | 471,845 | 21.19 |
+| 100,000 | 201ms | 498,551 | 20.06 |
+| 200,000 | 384ms | 521,203 | 19.19 |
+| 400,000 | 783ms | 510,820 | 19.58 |
+
+Cost per 10,000 droplets stays within a few percent across a 16x range, so the
+simulation is linear in droplet count. Droplets do not interact, so this is
+what should happen — worth confirming rather than assuming.
+
+**Brush radius** — 512x512, 100,000 droplets:
+
+| Radius | Brush cells | Median | Droplets/sec |
+|---|---|---|---|
+| 1 | 5 | 160ms | 625,419 |
+| 2 | 13 | 171ms | 586,030 |
+| 3 | 29 | 197ms | 507,349 |
+| 4 | 49 | 231ms | 433,291 |
+| 5 | 81 | 328ms | 305,093 |
+| 6 | 113 | 348ms | 287,186 |
+
+The interesting one. Brush cells grow **22.6x** from radius 1 to 6, but runtime
+only grows **2.2x**. The inner brush loop is therefore *not* the dominant cost —
+per-step work (gradient sampling, steering, the square root) is. Optimizing the
+brush still bought 11%, but this says where the next 11% would have to come
+from, and it is not there.
+
+### Measurement methodology
+
+The first version of this benchmark reported that throughput **halved** at
+2048x2048, and the obvious explanation was a cache cliff — 16 MB does not fit
+in L2 or L3, droplets access memory unpredictably, so misses dominate. It was a
+tidy story.
+
+It was also wrong. The same configuration measured in three different sweeps
+gave 112ms, 218ms, and 175ms — a 2x spread on identical work. The resolution
+sweep ran first, on a boosted clock; by the later sweeps the CPU had settled to
+its sustained frequency. The 2048x2048 case looked slow because it was measured
+last, not because it was large.
+
+Median-of-N does not catch this, because every sample within a group sits at
+the same point on the thermal curve.
+
+The benchmark now:
+
+1. Runs the simulation for 8 seconds before recording anything, to reach a
+   steady clock
+2. Measures one fixed control configuration at the start and again at the end,
+   and prints the drift between them
+3. Prints a warning if that drift exceeds 5%
+
+With warm-up in place the control agrees to within **0.5%** across the run, and
+the real degradation at 2048x2048 is 10% rather than 50%.
+
 ## Deliberately out of scope
 
 - **Multithreading.** Droplets are independent until they write, so this
@@ -178,8 +259,10 @@ three environments resolve assets identically.
 ```
 cpp/terrain.cpp                 noise, erosion, and the exported entry points
 cpp/test_terrain.cpp            native test suite
+cpp/bench_terrain.cpp           native scaling benchmark
 build.sh                        emcc invocation
 run_tests.sh                    native test build and run
+run_bench.sh                    native benchmark build and run
 web/src/App.jsx                 React UI, hillshading, benchmark harness
 web/src/index.css               styles
 .github/workflows/deploy.yml    build and publish to Pages
