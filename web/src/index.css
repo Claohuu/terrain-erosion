@@ -1,10 +1,18 @@
+@import url('https://fonts.googleapis.com/css2?family=Audiowide&family=Space+Mono:wght@400;700&display=swap');
+
 :root {
-  --bg: #14141a;
-  --panel: #1c1c24;
-  --border: #2b2b36;
-  --text: #e6e6ee;
-  --muted: #8a8a9a;
-  --accent: #6aa9e9;
+  --accent: #b3a1de;
+  --accent-dim: rgba(179, 161, 222, 0.16);
+  --accent-2: #d699b0;
+  --bg: #161a19;
+  --panel: #23252d;
+  --panel-line: #343745;
+  --sunken: #191b22;
+  --tab-bg: #12141a;
+  --text: #ecefee;
+  --text-muted: #8d9694;
+  --font-body: 'Space Mono', 'Work Sans', monospace;
+  --font-heading: 'Audiowide', sans-serif;
 }
 
 * {
@@ -15,8 +23,8 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--text);
-  font-family: 'Segoe UI', system-ui, sans-serif;
-  font-size: 14px;
+  font-family: var(--font-body);
+  font-size: 13px;
 }
 
 .app {
@@ -34,19 +42,22 @@ header {
 }
 
 h1 {
-  font-size: 20px;
+  font-family: var(--font-heading);
+  font-size: 22px;
   margin: 0;
-  font-weight: 600;
+  font-weight: 400;
+  letter-spacing: 0.02em;
 }
 
 .sub {
-  color: var(--muted);
-  font-size: 12px;
+  color: var(--text-muted);
+  font-size: 11px;
+  letter-spacing: 0.04em;
 }
 
 .layout {
   display: grid;
-  grid-template-columns: 1fr 260px;
+  grid-template-columns: 1fr 268px;
   gap: 20px;
   align-items: start;
 }
@@ -57,81 +68,92 @@ h1 {
   }
 }
 
+.viewport {
+  background: var(--panel);
+  border: 2px solid var(--accent);
+  padding: 18px;
+}
+
 canvas {
   width: 100%;
   max-width: 512px;
   height: auto;
   display: block;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: #0f0f14;
+  border: 1px solid var(--panel-line);
+  background: var(--sunken);
 }
 
 .toolbar {
   display: flex;
   gap: 8px;
-  margin-top: 12px;
+  margin-top: 14px;
   flex-wrap: wrap;
 }
 
 .seg {
   display: inline-flex;
-  border: 1px solid var(--border);
-  border-radius: 6px;
+  border: 1px solid var(--accent);
   overflow: hidden;
 }
 
 .seg button {
-  background: transparent;
+  background: var(--tab-bg);
   border: 0;
-  color: var(--muted);
-  padding: 6px 14px;
-  font-size: 12px;
+  color: var(--text-muted);
+  padding: 6px 13px;
+  font-size: 11px;
+  letter-spacing: 0.04em;
   cursor: pointer;
-  font-family: inherit;
+  font-family: var(--font-body);
+}
+
+.seg button + button {
+  border-left: 1px solid var(--accent);
 }
 
 .seg button:hover {
   color: var(--text);
+  background: var(--accent-dim);
 }
 
 .seg button.on {
   background: var(--accent);
-  color: #10131a;
-  font-weight: 600;
+  color: #1b1626;
+  font-weight: 700;
 }
 
 .stats {
-  color: var(--muted);
-  font-size: 12px;
-  margin: 12px 0 0;
-  font-variant-numeric: tabular-nums;
-  line-height: 1.6;
+  color: var(--text-muted);
+  font-size: 11px;
+  margin: 14px 0 0;
+  line-height: 1.7;
 }
 
 .stats b {
-  color: var(--text);
-  font-weight: 600;
+  color: var(--accent);
+  font-weight: 700;
 }
 
 .panel {
   background: var(--panel);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 16px;
+  border: 2px solid var(--accent);
+  padding: 18px;
 }
 
 .panel h2 {
-  font-size: 11px;
+  font-family: var(--font-heading);
+  font-size: 10px;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--muted);
-  margin: 0 0 10px;
-  font-weight: 600;
+  color: var(--accent);
+  margin: 0 0 12px;
+  font-weight: 400;
 }
 
 .panel h2:not(:first-child) {
-  margin-top: 20px;
+  margin-top: 22px;
+  padding-top: 16px;
+  border-top: 1px solid var(--panel-line);
 }
 
 .slider {
@@ -142,15 +164,14 @@ canvas {
 .slider .row {
   display: flex;
   justify-content: space-between;
-  font-size: 12px;
-  color: var(--muted);
-  margin-bottom: 4px;
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-bottom: 5px;
 }
 
 .slider .row b {
   color: var(--text);
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
+  font-weight: 700;
 }
 
 .slider input {
@@ -163,17 +184,17 @@ button.primary {
   margin-top: 18px;
   padding: 9px;
   background: var(--accent);
-  color: #10131a;
-  border: 0;
-  border-radius: 6px;
-  font-weight: 600;
-  font-size: 13px;
+  color: #1b1626;
+  border: 1px solid var(--accent);
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.06em;
   cursor: pointer;
-  font-family: inherit;
+  font-family: var(--font-body);
 }
 
 button.primary:disabled {
-  opacity: 0.55;
+  opacity: 0.5;
   cursor: default;
 }
 
@@ -181,39 +202,44 @@ button.ghost {
   width: 100%;
   margin-top: 8px;
   padding: 7px;
-  background: transparent;
-  color: var(--muted);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  font-size: 12px;
+  background: var(--tab-bg);
+  color: var(--text-muted);
+  border: 1px solid var(--accent);
+  font-size: 11px;
+  letter-spacing: 0.04em;
   cursor: pointer;
-  font-family: inherit;
+  font-family: var(--font-body);
 }
 
-button.ghost:hover {
+button.ghost:hover:not(:disabled) {
   color: var(--text);
+  background: var(--accent-dim);
+}
+
+button.ghost:disabled {
+  opacity: 0.5;
+  cursor: default;
 }
 
 .hint {
-  color: #d9a441;
-  font-size: 11px;
+  color: var(--accent-2);
+  font-size: 10px;
   margin: 8px 0 0;
   text-align: center;
+  letter-spacing: 0.03em;
 }
 
 .bench {
   margin: 10px 0 0;
   padding: 10px;
-  background: #16161d;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  font-size: 11px;
-  color: var(--muted);
-  line-height: 1.7;
-  font-variant-numeric: tabular-nums;
+  background: var(--sunken);
+  border: 1px solid var(--panel-line);
+  font-size: 10px;
+  color: var(--text-muted);
+  line-height: 1.8;
 }
 
 .bench b {
-  color: var(--text);
-  font-weight: 600;
+  color: var(--accent);
+  font-weight: 700;
 }
