@@ -243,3 +243,74 @@ button.ghost:disabled {
   color: var(--accent);
   font-weight: 700;
 }
+
+.help {
+  position: relative;
+  cursor: help;
+  border-bottom: 1px dotted var(--text-muted);
+}
+
+.help::after,
+.help::before {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.12s ease;
+}
+
+.help::after {
+  content: attr(data-tip);
+  position: absolute;
+  right: calc(100% + 12px);
+  top: 50%;
+  transform: translateY(-50%);
+  width: 210px;
+  background: var(--tab-bg);
+  border: 1px solid var(--accent);
+  padding: 9px 11px;
+  font-size: 10px;
+  line-height: 1.65;
+  letter-spacing: 0;
+  color: var(--text);
+  text-align: left;
+  white-space: normal;
+  z-index: 20;
+}
+
+.help::before {
+  content: '';
+  position: absolute;
+  right: calc(100% + 6px);
+  top: 50%;
+  transform: translateY(-50%);
+  border: 6px solid transparent;
+  border-left-color: var(--accent);
+  z-index: 21;
+}
+
+.help:hover::after,
+.help:hover::before {
+  opacity: 1;
+}
+
+.slider .row {
+  position: relative;
+}
+
+@media (max-width: 880px) {
+  .help::after {
+    right: auto;
+    left: 0;
+    top: calc(100% + 10px);
+    transform: none;
+    width: min(240px, 80vw);
+  }
+
+  .help::before {
+    right: auto;
+    left: 12px;
+    top: calc(100% + 4px);
+    transform: none;
+    border-left-color: transparent;
+    border-bottom-color: var(--accent);
+  }
+}

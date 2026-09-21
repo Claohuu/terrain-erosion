@@ -109,6 +109,19 @@ function renderHeights(heights, imageData, mode, relief) {
   }
 }
 
+const TIPS = {
+  seed: 'Starting number for the randomness. The same seed always produces exactly the same terrain.',
+  'feature size': 'How far apart the hills are. Larger values mean fewer, broader landforms.',
+  octaves: 'How many layers of noise are stacked. Each added layer contributes finer detail.',
+  persistence: 'How much each finer layer counts. Higher values make the terrain rougher.',
+  droplets: 'How many water particles are simulated. More droplets carve deeper, more connected valleys.',
+  inertia: 'How reluctant water is to change direction. Low carves tight ravines, high carves sweeping valleys.',
+  'erode speed': 'How quickly a droplet scrapes sediment off the ground it passes over.',
+  'deposit speed': 'How quickly a droplet drops its sediment once the water slows down.',
+  'brush radius': 'How wide an area each droplet scrapes. Larger values give smoother valley walls instead of narrow scratches.',
+  relief: 'Display only. Exaggerates the lighting to make slopes read more clearly. Does not change the terrain.',
+};
+
 const DEFAULTS = {
   seed: 1337,
   gridSize: 140,
@@ -374,7 +387,7 @@ function Slider({ label, value, min, max, step, onChange }) {
   return (
     <label className="slider">
       <span className="row">
-        <span>{label}</span>
+        <span className="help" data-tip={TIPS[label]}>{label}</span>
         <b>{value}</b>
       </span>
       <input
