@@ -4,7 +4,13 @@
 // Everything here operates on one flat array of floats, row-major, indexed
 // as (x + y * width).
 
-#include <emscripten/emscripten.h>
+// Emscripten only exists in the WASM build. Compiling natively (for the test
+// harness) needs the macro to vanish rather than the header to be found.
+#ifdef __EMSCRIPTEN__
+  #include <emscripten/emscripten.h>
+#else
+  #define EMSCRIPTEN_KEEPALIVE
+#endif
 #include <cstdlib>   // malloc, free
 #include <cmath>     // floorf, sqrtf
 
@@ -155,7 +161,7 @@ struct HeightAndGradient
     float gradientY;
 };
 
-HeightAndGradient sampleHeightAndGradient(const float* heights, int width, int height,
+HeightAndGradient sampleHeightAndGradient(const float* heights, int width,
                                           float posX, float posY)
 {
     int x0 = (int)posX;
@@ -358,7 +364,7 @@ extern "C"
                 float cellOffsetX = posX - (float)nodeX;
                 float cellOffsetY = posY - (float)nodeY;
 
-                HeightAndGradient hg = sampleHeightAndGradient(heights, width, height, posX, posY);
+                HeightAndGradient hg = sampleHeightAndGradient(heights, width, posX, posY);
 
                 // Steer: keep some of the old direction, bend the rest toward
                 // downhill. Pure gradient-following produces jittery paths that

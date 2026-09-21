@@ -15,3 +15,6 @@ node_modules/
 .vscode/
 *.user
 .DS_Store
+
+# Native test build output
+build/

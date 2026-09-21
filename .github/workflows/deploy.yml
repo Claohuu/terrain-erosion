@@ -18,7 +18,18 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # Tests run natively with g++ -- no Emscripten, no browser. A failure here
+  # stops the deploy, so main never publishes a broken simulation.
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run test suite
+        run: ./run_tests.sh
+
   build:
+    needs: test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

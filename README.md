@@ -80,6 +80,40 @@ than sloped valley walls.
 The simulation is fully deterministic: the same seed always produces the same
 terrain, which makes every result reproducible and every bug repeatable.
 
+## Testing
+
+```bash
+./run_tests.sh
+```
+
+Builds the simulation natively with `g++` and runs 27 checks — no Emscripten,
+no browser. The C++ is plain portable code; only the exported entry points care
+about WebAssembly, and those are guarded by `#ifdef __EMSCRIPTEN__`.
+
+What it covers:
+
+- **Determinism.** Same seed produces a byte-identical heightmap, before and
+  after erosion. This is the property the whole debugging story rests on.
+- **Numerical sanity.** No NaN or infinity anywhere, including on perfectly
+  flat terrain where the slope is zero and capacity maths could divide by
+  nothing.
+- **Bounds safety.** The heightmap is allocated with sentinel guard bands on
+  either side, and erosion is run at every brush radius from 1 to 8. Any write
+  past the logical buffer trips a guard. This is the test for the optimization
+  that removed per-cell bounds checking — the spawn margin has to be provably
+  wide enough, not just wide enough in practice.
+- **Mass accounting.** Total height is summed before and after. Erosion must
+  never *increase* it, since that would mean sediment appearing from nowhere.
+  The measured loss is **3.7%**, which is sediment carried off the map edge by
+  droplets that ran out of bounds — the known simplification, now quantified.
+- **Degenerate inputs.** A map smaller than the brush, zero droplets, and
+  perfectly flat terrain.
+
+CI runs the suite on Linux, where AddressSanitizer and UBSan are available, and
+a failure blocks the deploy. `run_tests.sh` detects sanitizer support and falls
+back to the guard-band checks on toolchains without it (MinGW does not ship the
+runtime).
+
 ## Performance
 
 512×512 heightmap, 150,000 droplets, brush radius 3. Each figure is the median
@@ -143,7 +177,9 @@ three environments resolve assets identically.
 
 ```
 cpp/terrain.cpp                 noise, erosion, and the exported entry points
+cpp/test_terrain.cpp            native test suite
 build.sh                        emcc invocation
+run_tests.sh                    native test build and run
 web/src/App.jsx                 React UI, hillshading, benchmark harness
 web/src/index.css               styles
 .github/workflows/deploy.yml    build and publish to Pages
