@@ -58,17 +58,17 @@ hundred milliseconds and blocks the page while it works.
 
 ## How it works
 
-**Generation.** Random values are placed at the corners of a coarse lattice and
+Generation: Random values are placed at the corners of a coarse lattice and
 interpolated in between, which is what makes nearby points similar rather than
 producing static. Several layers at doubling frequency and halving amplitude
 are summed, giving large landforms with fine detail riding on top.
 
-**Erosion.** Each droplet samples the slope beneath it, steers by blending its
+Erosion: Each droplet samples the slope beneath it, steers by blending its
 existing direction with downhill, then compares how much sediment it can carry
 against how much it holds. Carrying too much, it deposits; too little, it
 erodes. It speeds up descending and loses water to evaporation until it dies.
 
-The simulation is deterministic — the same seed always produces the same
+The same seed always produces the same
 terrain, so every result is reproducible and every bug repeats.
 
 ## Layout
@@ -82,12 +82,3 @@ build.sh                        emcc invocation
 .github/workflows/deploy.yml    test, build, publish to Pages
 ```
 
-The C++ exposes two functions. `generate` allocates a heightmap and returns a
-pointer; `erode` modifies one in place. That pointer is a byte offset into
-WebAssembly's linear memory, and JavaScript reads the same bytes through a
-`Float32Array` view — nothing is copied across the boundary.
-
-## Engineering notes
-
-Performance work, test coverage, scaling measurements, and benchmarking
-methodology are in [ENGINEERING.md](ENGINEERING.md).
