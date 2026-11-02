@@ -1,3 +1,7 @@
+/// Benchmarks erode across map sizes, droplet counts and brush radii.
+/// Warms the CPU up first and times a control run at the start and end
+/// to catch clock speed drift.
+
 #include "terrain.cpp"
 
 #include <algorithm>
@@ -8,6 +12,14 @@
 
 typedef std::chrono::steady_clock Clock;
 
+/// Times erode several times, each on a fresh copy of the same terrain.
+/// params:
+/// width: map width
+/// height: map height
+/// droplets: droplets per run
+/// radius: brush radius
+/// runs: how many timed runs
+/// returns: the median time in milliseconds
 static double medianErodeMs(int width, int height, int droplets, int radius, int runs)
 {
     std::vector<double> samples;
@@ -37,6 +49,10 @@ static double medianErodeMs(int width, int height, int droplets, int radius, int
     return samples[samples.size() / 2];
 }
 
+/// Keeps erode running so the CPU settles at its sustained clock speed
+/// before anything is measured.
+/// params:
+/// seconds: how long to keep the CPU busy
 static void warmUp(double seconds)
 {
     float* base = generate(512, 512, 1, 140.0f, 6, 0.5f, 2.0f);
@@ -55,6 +71,11 @@ static void warmUp(double seconds)
     free(base);
 }
 
+/// Times one fixed setup. Run at the start and end, a big difference
+/// means the machine drifted and the sweeps can't be trusted.
+/// params:
+/// runs: how many timed runs
+/// returns: the median time in milliseconds
 static double control(int runs)
 {
     return medianErodeMs(512, 512, 100000, 3, runs);

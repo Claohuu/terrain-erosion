@@ -1,3 +1,7 @@
+/// Terrain generation and hydraulic erosion on a heightmap.
+/// generate and erode are the only functions JavaScript calls through WebAssembly,
+/// everything else in this file is a helper for those two.
+
 #ifdef __EMSCRIPTEN__
   #include <emscripten/emscripten.h>
 #else
@@ -6,6 +10,13 @@
 #include <cstdlib>
 #include <cmath>
 
+/// Turns a grid corner and a seed into a random value that is always the same
+/// for the same inputs.
+/// params:
+/// x: column of the grid corner
+/// y: row of the grid corner
+/// seed: changes which random values come out
+/// returns: a value between 0 and 1
 float hash(int x, int y, int seed)
 {
     int h = x * 374761393 + y * 668265263 + seed * 362437;
@@ -44,6 +55,14 @@ float maxf(float a, float b)
     return b;
 }
 
+/// Samples value noise at a point by smoothly blending the random values
+/// at the four grid corners around it.
+/// params:
+/// x: horizontal position in cells
+/// y: vertical position in cells
+/// gridSize: distance between grid corners, bigger means broader hills
+/// seed: picks the random value at each corner
+/// returns: the noise value between 0 and 1
 float valueNoise(float x, float y, float gridSize, int seed)
 {
     float gx = x / gridSize;
@@ -71,6 +90,17 @@ float valueNoise(float x, float y, float gridSize, int seed)
     return lerp(top, bottom, sy);
 }
 
+/// Stacks layers of value noise, each one finer and weaker than the last,
+/// so the terrain has big hills with smaller detail on top.
+/// params:
+/// x: horizontal position in cells
+/// y: vertical position in cells
+/// gridSize: spacing of the coarsest layer
+/// seed: base seed, each layer gets its own offset from it
+/// octaves: how many layers to stack
+/// persistence: how much weaker each layer is than the one before
+/// lacunarity: how much finer each layer is than the one before
+/// returns: the combined height, kept between 0 and 1
 float fbm(float x, float y, float gridSize, int seed,
           int octaves, float persistence, float lacunarity)
 {
@@ -100,12 +130,22 @@ const float GRAVITY           = 4.0f;
 const float INITIAL_SPEED     = 1.0f;
 const float INITIAL_WATER     = 1.0f;
 
+/// The slope of the terrain at one point. x and y are how fast the height
+/// rises when moving right and when moving down.
 struct Gradient
 {
     float x;
     float y;
 };
 
+/// Finds the slope at a point that can sit between cells, using the four
+/// heights around it.
+/// params:
+/// heights: the heightmap
+/// width: number of columns in the heightmap
+/// posX: horizontal position
+/// posY: vertical position
+/// returns: the slope as a Gradient
 Gradient sampleGradient(const float* heights, int width, float posX, float posY)
 {
     int x0 = (int)posX;
@@ -129,6 +169,13 @@ Gradient sampleGradient(const float* heights, int width, float posX, float posY)
     return result;
 }
 
+/// Finds the height at a point between cells with bilinear interpolation.
+/// params:
+/// heights: the heightmap
+/// width: number of columns in the heightmap
+/// posX: horizontal position
+/// posY: vertical position
+/// returns: the blended height
 float sampleHeight(const float* heights, int width, float posX, float posY)
 {
     int x0 = (int)posX;
@@ -153,6 +200,17 @@ float sampleHeight(const float* heights, int width, float posX, float posY)
 extern "C"
 {
 
+    /// Builds a new heightmap from fractal noise. The caller owns the memory
+    /// and has to free it, which is why JavaScript calls _free afterwards.
+    /// params:
+    /// width: number of columns
+    /// height: number of rows
+    /// seed: same seed gives the same terrain
+    /// gridSize: feature size of the biggest hills
+    /// octaves: number of noise layers
+    /// persistence: how much each finer layer counts
+    /// lacunarity: how much finer each layer gets
+    /// returns: pointer to width * height floats, or 0 if malloc fails
     EMSCRIPTEN_KEEPALIVE
     float* generate(int width, int height, int seed, float gridSize,
                     int octaves, float persistence, float lacunarity)
@@ -178,6 +236,19 @@ extern "C"
         return heights;
     }
 
+    /// Rains droplets on the heightmap. Each one rolls downhill, picks up sediment
+    /// where it is fast and steep, and drops it where it slows down or climbs.
+    /// Changes the heightmap in place.
+    /// params:
+    /// heights: the heightmap to erode
+    /// width: number of columns
+    /// height: number of rows
+    /// numDroplets: how many droplets to simulate
+    /// seed: makes the droplet start points repeatable
+    /// inertia: how much a droplet keeps its direction instead of following the slope
+    /// erodeSpeed: how fast a droplet picks up sediment
+    /// depositSpeed: how fast a droplet drops sediment it can't carry
+    /// radius: how wide an area each droplet erodes
     EMSCRIPTEN_KEEPALIVE
     void erode(float* heights, int width, int height,
                int numDroplets, int seed,

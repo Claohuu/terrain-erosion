@@ -20,6 +20,10 @@ const STOPS = [
   [1.0, [226, 226, 230]],
 ];
 
+/// Picks a color for a height by blending the two nearest STOPS.
+/// params:
+/// t: height normalized between 0 and 1
+/// returns: the color as [r, g, b]
 function elevationColor(t) {
   for (let i = 0; i < STOPS.length - 1; i += 1) {
     const [t0, c0] = STOPS[i];
@@ -38,6 +42,13 @@ function elevationColor(t) {
   return STOPS[STOPS.length - 1][1];
 }
 
+/// Turns the heightmap into pixels. Shaded mode colors by height and lights the
+/// slopes from the upper left, height mode is plain greyscale.
+/// params:
+/// heights: the heightmap as a Float32Array
+/// imageData: canvas ImageData that the pixels get written into
+/// mode: 'shaded' or 'height'
+/// relief: how much the slopes are exaggerated for the lighting
 function renderHeights(heights, imageData, mode, relief) {
   let min = Infinity;
   let max = -Infinity;
@@ -135,6 +146,8 @@ const DEFAULTS = {
   radius: 3,
 };
 
+/// The main page. Loads the WebAssembly module, keeps the slider settings in state,
+/// runs generate and erode when regenerate is pressed, and draws the result.
 export default function App() {
   const canvasRef = useRef(null);
   const moduleRef = useRef(null);
@@ -150,6 +163,7 @@ export default function App() {
   const [ready, setReady] = useState(false);
   const [bench, setBench] = useState(null);
 
+  /// Draws the raw or eroded map to the canvas with the current view, mode and relief.
   const draw = useCallback(() => {
     const maps = mapsRef.current;
     let heights = maps.eroded;
@@ -168,6 +182,10 @@ export default function App() {
     ctx.putImageData(image, 0, 0);
   }, [view, mode, relief]);
 
+  /// Generates and erodes a new terrain in C++, copies the before and after maps
+  /// out of WebAssembly memory, then frees the C++ buffer.
+  /// params:
+  /// p: the settings to use, passed in so it always gets the current values
   const run = useCallback((p) => {
     const mod = moduleRef.current;
 
@@ -210,6 +228,10 @@ export default function App() {
     }, 16);
   }, []);
 
+  /// Times erode over several fresh runs and saves the median, fastest and slowest.
+  /// params:
+  /// p: the settings to use
+  /// runs: how many timed runs
   const runBenchmark = useCallback((p, runs) => {
     const mod = moduleRef.current;
 
@@ -271,6 +293,10 @@ export default function App() {
     draw();
   }, [draw, timing]);
 
+  /// Changes one setting and marks the terrain stale until regenerate is pressed.
+  /// params:
+  /// key: which setting to change
+  /// value: the new value
   const update = (key, value) => {
     setParams((prev) => ({ ...prev, [key]: value }));
     setStale(true);
@@ -383,6 +409,15 @@ export default function App() {
   );
 }
 
+/// A labeled range slider with a help tooltip. It keeps no state of its own.
+/// params:
+/// label: name shown on the slider, also used to look up its tip
+/// value: the current value
+/// min: smallest value
+/// max: largest value
+/// step: how much one notch changes the value
+/// onChange: called with the new value as a number
+/// returns: the slider element
 function Slider({ label, value, min, max, step, onChange }) {
   return (
     <label className="slider">

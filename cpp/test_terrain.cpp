@@ -1,3 +1,6 @@
+/// Tests for terrain.cpp that run natively with g++ instead of in the browser.
+/// Includes the source file directly so the helper functions can be tested too.
+
 #include "terrain.cpp"
 
 #include <cmath>
@@ -7,6 +10,10 @@
 static int checksRun = 0;
 static int checksFailed = 0;
 
+/// Records one test result and prints pass or FAIL.
+/// params:
+/// condition: true if the check passed
+/// name: what is being checked, shown in the output
 static void check(bool condition, const char* name)
 {
     checksRun += 1;
@@ -22,6 +29,8 @@ static void check(bool condition, const char* name)
     }
 }
 
+/// Checks that value noise and fbm stay between 0 and 1, actually vary,
+/// and give the same result for the same seed.
 static void testNoise()
 {
     printf("noise\n");
@@ -76,6 +85,8 @@ static void testNoise()
     check(fbmInRange, "fbm stays within [0, 1] across octaves");
 }
 
+/// Checks that generate gives an identical map for the same seed, a different
+/// map for a different seed, and no NaN or infinity.
 static void testGenerate()
 {
     printf("generate\n");
@@ -113,6 +124,12 @@ static void testGenerate()
 static const int GUARD = 64;
 static const float SENTINEL = -123456.0f;
 
+/// Allocates a map with GUARD sentinel floats on both sides of it, so any write
+/// past either end of the map can be caught.
+/// params:
+/// w: map width
+/// h: map height
+/// returns: the whole block, the map itself starts at block + GUARD
 static float* allocateGuarded(int w, int h)
 {
     float* block = (float*)malloc((size_t)(w * h + 2 * GUARD) * sizeof(float));
@@ -126,6 +143,12 @@ static float* allocateGuarded(int w, int h)
     return block;
 }
 
+/// Checks that nothing overwrote the sentinel values around the map.
+/// params:
+/// block: the block from allocateGuarded
+/// w: map width
+/// h: map height
+/// returns: true if every guard value is still SENTINEL
 static bool guardsIntact(const float* block, int w, int h)
 {
     for (int i = 0; i < GUARD; i += 1)
@@ -139,6 +162,9 @@ static bool guardsIntact(const float* block, int w, int h)
     return true;
 }
 
+/// Checks that erosion is deterministic, never makes NaN or digs below zero,
+/// loses little sediment, stays in bounds at every brush radius, and survives
+/// odd inputs like a tiny map, zero droplets, or perfectly flat ground.
 static void testErosion()
 {
     printf("erosion\n");
@@ -255,6 +281,8 @@ static void testErosion()
     free(base);
 }
 
+/// Runs every test group and prints the totals.
+/// returns: 0 if every check passed, 1 if any failed so CI stops the deploy
 int main()
 {
     printf("\n");
