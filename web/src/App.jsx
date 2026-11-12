@@ -306,7 +306,6 @@ export default function App() {
     <div className="app">
       <header>
         <h1>Terrain Erosion</h1>
-        <span className="sub">C++ · WebAssembly · hydraulic erosion</span>
       </header>
 
       <div className="layout">
